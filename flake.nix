@@ -48,12 +48,23 @@
         };
       };
     });
+
+    packages = forEachSupportedSystem (
+      {pkgs, ...}: {
+        default = pkgs.buildGoModule {
+          pname = "certstream-match";
+          version = "0.1";
+          src = ./.;
+          vendorHash = null;
+        };
+      }
+    );
     devShells = forEachSupportedSystem ({
       pkgs,
       system,
     }: {
       default = pkgs.mkShell {
-        name = "golangdev";
+        name = "certstream-match";
         shellHook = ''
           export PATH="$PWD/bin:$PATH"
           ${self.checks.${system}.pre-commit-check.shellHook}
