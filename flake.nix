@@ -38,6 +38,10 @@
             noLambdaPatternNames = true;
           };
           flake-checker.enable = true;
+          # golang
+          revive.enable = true;
+          gofmt.enable = true;
+          gotest.enable = true;
           # shell scripts
           shellcheck.enable = true;
           beautysh.enable = true;
