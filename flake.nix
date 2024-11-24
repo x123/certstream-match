@@ -1,31 +1,74 @@
 {
   description = "flake for Golang 1.22 devenv";
 
-  inputs.nixpkgs.url = "nixpkgs/nixpkgs-unstable";
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixpkgs-unstable";
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+  };
 
-  outputs = { self, nixpkgs }:
-    let
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
-        pkgs = import nixpkgs {
+  outputs = {
+    self,
+    nixpkgs,
+    pre-commit-hooks,
+  }: let
+    supportedSystems = ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"];
+    forEachSupportedSystem = f:
+      nixpkgs.lib.genAttrs supportedSystems (system:
+        f {
           inherit system;
-        };
-      });
-    in
-    {
-      devShells = forEachSupportedSystem ({ pkgs }: {
-        default = pkgs.mkShell {
-          packages = [
-            # go (version is specified by overlay)
-            pkgs.go_1_23
+          pkgs = import nixpkgs {
+            inherit system;
+          };
+        });
+  in {
+    formatter =
+      forEachSupportedSystem ({pkgs, ...}:
+        pkgs.alejandra);
 
-            # goimports, godoc, etc.
-            pkgs.gotools
-
-            # https://github.com/golangci/golangci-lint
-            pkgs.golangci-lint
-          ];
+    checks = forEachSupportedSystem ({system, ...}: {
+      pre-commit-check = pre-commit-hooks.lib.${system}.run {
+        src = ./.;
+        hooks = {
+          # nix
+          alejandra.enable = true;
+          alejandra.settings.check = true;
+          deadnix.enable = true;
+          deadnix.settings = {
+            noLambdaArg = true;
+            noLambdaPatternNames = true;
+          };
+          flake-checker.enable = true;
+          # shell scripts
+          shellcheck.enable = true;
+          beautysh.enable = true;
+          # JSON
+          check-json.enable = true;
+          # generic
+          check-toml.enable = true;
         };
-      });
-    };
+      };
+    });
+    devShells = forEachSupportedSystem ({
+      pkgs,
+      system,
+    }: {
+      default = pkgs.mkShell {
+        name = "golangdev";
+        shellHook = ''
+          export PATH="$PWD/bin:$PATH"
+          ${self.checks.${system}.pre-commit-check.shellHook}
+        '';
+        packages =
+          builtins.attrValues {
+            inherit
+              (pkgs)
+              go_1_23
+              gotools
+              golangci-lint
+              ;
+          }
+          ++ self.checks.${system}.pre-commit-check.enabledPackages;
+      };
+    });
+  };
 }
