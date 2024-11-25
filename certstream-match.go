@@ -6,6 +6,7 @@ package main
 import (
 	"bufio"
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -22,10 +23,16 @@ import (
 var stringarray []string
 var addr = flag.String("addr", "127.0.0.1:8181", "http service address")
 
+// {"data":["ph-faq.ru","www.ph-faq.ru"],"message_type":"dns_entries"}
+type response1 struct {
+	Data        []string `json:"data"`
+	MessageType string   `json:"message_type"`
+}
+
 func main() {
-	// regexString := loadRegex()
-	// fmt.Printf("regex_string:%s\n", regexString)
-	// var re = regexp.MustCompile(regexString)
+	regexString := loadRegex()
+	fmt.Printf("regex_string:%s\n", regexString)
+	var re = regexp.MustCompile(regexString)
 	// echoMatchedStdin(re)
 
 	flag.Parse()
@@ -55,7 +62,16 @@ func main() {
 				log.Println("read:", err)
 				return
 			}
-			fmt.Printf("recv: %s\n", message)
+			res := response1{}
+			json.Unmarshal(message, &res)
+			//fmt.Printf("recv: %s\n", message)
+			// fmt.Printf("json recv: %s\n", res.Data)
+			for _, value := range res.Data {
+				match := re.MatchString(value)
+				if match {
+					fmt.Println(value)
+				}
+			}
 		}
 	}()
 
