@@ -23,17 +23,19 @@ import (
 var stringarray []string
 var addr = flag.String("addr", "127.0.0.1:8181", "http service address")
 
-// {"data":["ph-faq.ru","www.ph-faq.ru"],"message_type":"dns_entries"}
+/*
+response from certstream-server /domains-only endpoint looks like
+{"data":["example.com","www.example.com"],"message_type":"dns_entries"}
+*/
 type response1 struct {
 	Data        []string `json:"data"`
 	MessageType string   `json:"message_type"`
 }
 
 func main() {
-	regexString := loadRegex()
+	regexString := loadRegex("./regexs.txt")
 	fmt.Printf("regex_string:%s\n", regexString)
 	var re = regexp.MustCompile(regexString)
-	// echoMatchedStdin(re)
 
 	flag.Parse()
 	log.SetFlags(0)
@@ -62,13 +64,12 @@ func main() {
 				log.Println("read:", err)
 				return
 			}
+
 			res := response1{}
 			json.Unmarshal(message, &res)
-			//fmt.Printf("recv: %s\n", message)
-			// fmt.Printf("json recv: %s\n", res.Data)
 			for _, value := range res.Data {
 				match := re.MatchString(value)
-				if match {
+				if !strings.HasPrefix(value, "*") && match {
 					fmt.Println(value)
 				}
 			}
@@ -107,8 +108,8 @@ func main() {
 	}
 }
 
-func loadRegex() string {
-	f, err := os.Open("./regexs.txt")
+func loadRegex(path string) string {
+	f, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -131,19 +132,4 @@ func loadRegex() string {
 	sb.WriteString(strings.Join(array, "|"))
 	sb.WriteString(")")
 	return sb.String()
-}
-
-func echoMatchedStdin(re *regexp.Regexp) error {
-	// This function just echos any stdin that matches regexp re
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		match := re.MatchString(scanner.Text())
-		if match {
-			fmt.Println(scanner.Text())
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-	return nil
 }
