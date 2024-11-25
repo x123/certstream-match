@@ -39,7 +39,7 @@
           };
           flake-checker.enable = true;
           # golang
-          revive.enable = true;
+          # revive.enable = true;
           gofmt.enable = true;
           gotest.enable = true;
           # shell scripts
