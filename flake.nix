@@ -59,7 +59,8 @@
           pname = "certstream-match";
           version = "0.1";
           src = ./.;
-          vendorHash = "sha256-0Qxw+MUYVgzgWB8vi3HBYtVXSq/btfh4ZfV/m1chNrA=";
+          # vendorHash = nixpkgs.lib.fakeHash;
+          vendorHash = "sha256-Xc/DatYTV+UumDZQ9Nq2H0QItXPgmzSHvYOWvR5lqBE=";
         };
       }
     );
