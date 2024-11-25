@@ -77,7 +77,7 @@ func monitorGeneral(cmd *cobra.Command, args []string) {
 	var re *regexp.Regexp
 	if regexFile != "" {
 		regexString := loadRegex("./regexs.txt")
-		fmt.Printf("regex_string:%s\n", regexString)
+		log.Printf("regex_string:%s\n", regexString)
 		re = regexp.MustCompile(regexString)
 	}
 
