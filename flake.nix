@@ -60,7 +60,7 @@
           version = "0.1";
           src = ./.;
           # vendorHash = nixpkgs.lib.fakeHash;
-          vendorHash = "sha256-ZSGcA708LdU3IziZhxIQW84HNbdNOQN7mjJpEByC260=";
+          vendorHash = "sha256-IICMRBgg3PH8Bn0/tPP8YPy4jqgEsHsEPPEqpQP+w9g=";
         };
       }
     );

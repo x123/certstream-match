@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	// "net"
 	"net/url"
 	"os"
 	"os/signal"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/miekg/dns"
 	"github.com/spf13/cobra"
 )
 
@@ -45,6 +47,79 @@ response from certstream-server /domains-only endpoint looks like
 type response1 struct {
 	Data        []string `json:"data"`
 	MessageType string   `json:"message_type"`
+}
+
+func dnsLookup(hostname string) {
+	m1 := new(dns.Msg)
+	m1.Id = dns.Id()
+	m1.RecursionDesired = true
+	m1.Question = make([]dns.Question, 1)
+	q := fmt.Sprintf("%s.", hostname)
+	m1.Question[0] = dns.Question{q, dns.TypeNS, dns.ClassINET}
+
+	// c := new(dns.Client)
+	// laddr := net.UDPAddr{
+	// 	// IP:   net.ParseIP("[::1]"),
+	// 	IP:   net.ParseIP("0.0.0.0"),
+	// 	Port: 12345,
+	// 	Zone: "",
+	// }
+	// c.Dialer = &net.Dialer{
+	// 	Timeout:   200 * time.Millisecond,
+	// 	LocalAddr: &laddr,
+	// }
+	//
+	// in, rtt, err := c.Exchange(m1, "8.8.8.8:53")
+	// if err != nil {
+	// 	log.Println(err)
+	// } else {
+	// 	// fmt.Printf("%s", in)
+	// 	fmt.Printf("%s", rtt)
+	// 	if t, ok := in.Answer[0].(*dns.TXT); ok {
+	// 		log.Println(t.Txt)
+	// 	}
+	// }
+
+	// finrozz.top.    21600   IN      NS      carmelo.ns.cloudflare.com.
+	// finrozz.top.    21600   IN      NS      violet.ns.cloudflare.com.
+	// gy79h.top
+	// ;; opcode: QUERY, status: NOERROR, id: 41856
+	// ;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 0
+	//
+	// ;; QUESTION SECTION:
+	// ;gy79h.top.     IN       NS
+	//
+	// ;; ANSWER SECTION:
+	// gy79h.top.      3600    IN      NS      pdns08.domaincontrol.com.
+	// gy79h.top.      3600    IN      NS      pdns07.domaincontrol.com.
+	// financetracker.top
+	// ^Cinterrupt
+	// ;; opcode: QUERY, status: NOERROR, id: 4054
+	// ;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 0
+	//
+	// ;; QUESTION SECTION:
+	// ;financetracker.top.    IN       NS
+	//
+	// ;; ANSWER SECTION:
+	// financetracker.top.     21600   IN      NS      sunny.ns.cloudflare.com.
+	// financetracker.top.     21600   IN      NS      cesar.ns.cloudflare.com.
+	in, err := dns.Exchange(m1, "8.8.8.8:53")
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Printf("%s", in)
+		if t, ok := in.Answer[0].(*dns.TXT); ok {
+			log.Println(t.Txt)
+			// joined := strings.Join(t.Txt, "\n")
+			// nameservers := extractNSRecords(joined)
+			// log.Println(strings.Join(nameservers, ","))
+		}
+	}
+}
+
+func extractNSRecords(rawTxt string) []string {
+	re := regexp.MustCompile(`^.*\.\s*[0-9]{1,5}\s*IN\s*NS\s*(.*\).$`)
+	return re.FindAllString(rawTxt, -1)
 }
 
 func loadRegex(path string) string {
@@ -118,6 +193,7 @@ func monitorGeneral(cmd *cobra.Command, args []string) {
 					match := re.MatchString(value)
 					if !strings.HasPrefix(value, "*") && match {
 						fmt.Println(value)
+						dnsLookup(value)
 					}
 				} else {
 					fmt.Println(value)
